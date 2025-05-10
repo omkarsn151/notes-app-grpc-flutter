@@ -1,15 +1,46 @@
-import "dotenv/config.js";
+import "dotenv/config";
 import connectDB from "./db/index.js";
-import app from "./app.js";
+import app from "./app.js"; // Corrected the path to app.js
+import grpc from "@grpc/grpc-js";
+import protoLoader from "@grpc/proto-loader";
+import noteController from "./controllers/notesController.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const PROTO_PATH = path.join(__dirname, "../proto/notes.proto");
+
+const packageDef = protoLoader.loadSync(PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+});
+
+const proto = grpc.loadPackageDefinition(packageDef).notes;
+
+const server = new grpc.Server();
+server.addService(proto.NoteService.service, noteController);
 
 connectDB()
-.then(() => {
-    app.listen(process.env.PORT || 8000 , () => {
-        console.log(`Server running on port ${process.env.PORT}`);
+  .then(() => {
+    app.listen(3000, () => {
+      console.log(`REST server running on port 3000`);
     });
-    console.log("MongoDB connected!!")
-})
-.catch((error) => {
-    console.log("MongoDB connection error!!: ",error)
-    // process.exit(1);
-});
+
+    server.bindAsync(
+      `0.0.0.0:${process.env.PORT}`,
+      grpc.ServerCredentials.createInsecure(),
+      (err, port) => {
+        if (err) throw err;
+        console.log(`gRPC Server running at 0.0.0.0:${port}`);
+        server.start();
+      }
+    );
+  })
+  .catch((err) => {
+    console.error("Failed to connect DB:", err);
+  });
