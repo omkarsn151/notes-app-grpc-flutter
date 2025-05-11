@@ -1,6 +1,6 @@
 import "dotenv/config";
 import connectDB from "./db/index.js";
-import app from "./app.js"; // Corrected the path to app.js
+import app from "./app.js";
 import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 import noteController from "./controllers/notesController.js";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PROTO_PATH = path.join(__dirname, "../proto/notes.proto");
+const PROTO_PATH = path.join(__dirname, "../../proto/notes.proto");
 
 const packageDef = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -32,11 +32,11 @@ connectDB()
     });
 
     server.bindAsync(
-      `0.0.0.0:${process.env.PORT}`,
+      `${process.env.IP}:${process.env.PORT}`,
       grpc.ServerCredentials.createInsecure(),
       (err, port) => {
         if (err) throw err;
-        console.log(`gRPC Server running at 0.0.0.0:${port}`);
+        console.log(`gRPC Server running at you server:${port}`);
         server.start();
       }
     );
